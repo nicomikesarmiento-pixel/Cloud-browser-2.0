@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Browser Lite</title>
+    <style>
+        body {
+            margin: 0;
+            background: #121212;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+        }
+        #top-bar {
+            width: 100%;
+            background: #1f1f1f;
+            padding: 10px;
+            display: flex;
+            gap: 10px;
+            box-sizing: border-box;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+        #url-input {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: none;
+            background: #2d2d2d;
+            color: white;
+            font-size: 16px;
+        }
+        #go-btn {
+            padding: 8px 16px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        #screen-container {
+            flex: 1;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            background: black;
+            position: relative;
+        }
+        #browser-screen {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="top-bar">
+        <input type="text" id="url-input" placeholder="Enter URL (e.g., google.com)..." />
+        <button id="go-btn">Go</button>
+    </div>
+
+    <div id="screen-container">
+        <!-- Dito ipasok ang live video frames mula sa server -->
+        <img id="browser-screen" alt="Waiting for cloud browser stream..." />
+    </div>
+
+    <!-- Socket.io Client Library -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const screenImg = document.getElementById('browser-screen');
+        const urlInput = document.getElementById('url-input');
+        const goBtn = document.getElementById('go-btn');
+
+        // Tumanggap ng video frames mula sa server at ipakita sa <img> tag
+        socket.on('video-frame', (data) => {
+            const blob = new Blob([data], { type: 'image/jpeg' });
+            const url = URL.createObjectURL(blob);
+            screenImg.src = url;
+            
+            // Linisin ang memory para hindi bumagal ang phone
+            screenImg.onload = () => {
+                URL.revokeObjectURL(url);
+            };
+        });
+
+        // Pindutin ang 'Go' para mag-navigate sa bagong website
+        goBtn.addEventListener('click', () => {
+            const url = urlInput.value.trim();
+            if (url) {
+                socket.emit('navigate', url);
+            }
+        });
+
+        urlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                goBtn.click();
+            }
+        });
+
+        // I-send ang click coordinates pabalik sa server browser
+        screenImg.addEventListener('click', (e) => {
+            const rect = screenImg.getBoundingClientRect();
+            const x = Math.round((e.clientX - rect.left) * (1280 / screenImg.clientWidth));
+            const y = Math.round((e.clientY - rect.top) * (720 / screenImg.clientHeight));
+            
+            socket.emit('mouse-click', { x, y });
+        });
+    </script>
+</body>
+</html>
+  
