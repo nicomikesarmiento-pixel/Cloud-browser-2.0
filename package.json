@@ -1,0 +1,15 @@
+{
+  "name": "interactive-cloud-browser",
+  "version": "1.0.0",
+  "description": "Real-time interactive cloud browser stream",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "puppeteer": "^22.0.0",
+    "puppeteer-stream": "^0.1.6",
+    "ws": "^8.16.0"
+  }
+}
